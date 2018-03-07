@@ -38,34 +38,28 @@ class Host():
         print('Advertising service on RFCOMM channel %d' % port)
 
         while True:
-            try:
-                client_sock, client_info = server_sock.accept()
-                print('Accepted connection from ', client_info)
-                client_socks.append(client_sock)
-                client_thread = threading.Thread(
-                    target=receive,
-                    args=[client_sock, recv_queue],
-                )
-                client_thread.setDaemon(True)
-                client_thread.start()
-
-            except:
-                print('Closing socket')
-                client_sock.close()
-                server_sock.close()
+            client_sock, client_info = server_sock.accept()
+            print('Accepted connection from ', client_info)
+            client_socks.append(client_sock)
+            client_thread = threading.Thread(
+                target=self.receive,
+                args=[client_sock, recv_queue],
+            )
+            client_thread.setDaemon(True)
+            client_thread.start()
 
     def send(self, client_socks, send_queue):
         while True:
             data = send_queue.get()
-            for sock in client_socks:
-                sock.send(data)
+            for client_sock in client_socks:
+                client_sock.send(data)
             send_queue.task_done()
 
     def receive(self, sock, recv_queue):
         while True:
-            data = client_sock.recv(size)
+            data = self.sock.recv(1024)
             if data:
-                recv_queue.put(data)
+                self.recv_queue.put(data)
 
 
 class Client():
@@ -107,12 +101,12 @@ class Client():
 
     def send(self):
         while True:
-            data = send_queue.get()
-            sock.send(data)
-            send_queue.task_done()
+            data = self.send_queue.get()
+            self.sock.send(data)
+            self.send_queue.task_done()
 
     def receive(self):
         while True:
-            data = client_sock.recv(size)
+            data = self.sock.recv(size)
             if data:
-                recv_queue.put(data)
+                self.recv_queue.put(data)
