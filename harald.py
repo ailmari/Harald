@@ -8,18 +8,18 @@ class Host():
         self.client_socks = []
         self.connect_thread = threading.Thread(
             target=self.connect,
-            args=[self.client_socks, self.recv_queue]
+            args=[self.client_socks]
         )
         self.connect_thread.setDaemon(True)
         self.connect_thread.start()
         self.send_thread = threading.Thread(
             target=self.send,
-            args=[self.client_socks, self.send_queue],
+            args=[self.client_socks],
         )
         self.send_thread.setDaemon(True)
         self.send_thread.start()
 
-    def connect(self, client_socks, recv_queue):
+    def connect(self, client_socks):
         server_sock = BluetoothSocket(RFCOMM)
         server_sock.bind(('', PORT_ANY))
         server_sock.listen(1)
@@ -43,21 +43,21 @@ class Host():
             client_socks.append(client_sock)
             client_thread = threading.Thread(
                 target=self.receive,
-                args=[client_sock, recv_queue],
+                args=[client_sock],
             )
             client_thread.setDaemon(True)
             client_thread.start()
 
-    def send(self, client_socks, send_queue):
+    def send(self, client_socks):
         while True:
-            data = send_queue.get()
+            data = self.send_queue.get()
             for client_sock in client_socks:
                 client_sock.send(data)
-            send_queue.task_done()
+            self.send_queue.task_done()
 
-    def receive(self, sock, recv_queue):
+    def receive(self, sock):
         while True:
-            data = self.sock.recv(1024)
+            data = sock.recv(1024)
             if data:
                 self.recv_queue.put(data)
 
@@ -68,12 +68,10 @@ class Client():
         self.recv_queue = recv_queue
         self.sock = self.connect()
         self.send_thread = threading.Thread(
-            target=self.send,
-            args=[self.sock, self.send_queue],
+            target=self.send
         )
         self.recv_thread = threading.Thread(
-            target=self.receive,
-            args=[self.sock, self.recv_queue]
+            target=self.receive
         )
 
     def connect(self):

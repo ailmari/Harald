@@ -22,7 +22,7 @@ if __name__ == '__main__':
     send_queue = queue.Queue()
     recv_queue = queue.Queue()
     host = harald.Host(send_queue, recv_queue)
-    client = harald.Client(send_queue, recv_queue)
+    #client = harald.Client(send_queue, recv_queue)
 
     recv_thread = threading.Thread(
         target=receive,
