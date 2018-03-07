@@ -5,6 +5,7 @@ class Host():
     def __init__(self, send_queue, recv_queue):
         self.send_queue = send_queue
         self.recv_queue = recv_queue
+        self.lock = threading.Lock()
         self.client_socks = []
         self.connect_thread = threading.Thread(
             target=self.connect,
@@ -40,7 +41,9 @@ class Host():
         while True:
             client_sock, client_info = server_sock.accept()
             print('Accepted connection from ', client_info)
+            self.lock.acquire()
             client_socks.append(client_sock)
+            self.lock.release()
             client_thread = threading.Thread(
                 target=self.receive,
                 args=[client_sock],
@@ -50,29 +53,38 @@ class Host():
 
     def send(self, client_socks):
         while True:
+            self.lock.acquire()
             data = self.send_queue.get()
             for client_sock in client_socks:
                 client_sock.send(data)
             self.send_queue.task_done()
+            self.lock.release()
 
     def receive(self, sock):
         while True:
+            self.lock.aquire()
             data = sock.recv(1024)
             if data:
                 self.recv_queue.put(data)
+            self.lock.release()
 
 
 class Client():
     def __init__(self, send_queue, recv_queue):
         self.send_queue = send_queue
         self.recv_queue = recv_queue
+        self.lock = threading.Lock()
         self.sock = self.connect()
         self.send_thread = threading.Thread(
             target=self.send
         )
+        self.send_thread.setDaemon(True)
+        self.send_thread.start()
         self.recv_thread = threading.Thread(
             target=self.receive
         )
+        self.recv_thread.setDaemon(True)
+        self.recv_thread.start()
 
     def connect(self):
         print("Searching all nearby bluetooth devices for the BLT Host.")
@@ -99,12 +111,16 @@ class Client():
 
     def send(self):
         while True:
+            self.lock.acquire()
             data = self.send_queue.get()
             self.sock.send(data)
             self.send_queue.task_done()
+            self.lock.release()
 
     def receive(self):
         while True:
+            self.lock.acquire()
             data = self.sock.recv(size)
             if data:
                 self.recv_queue.put(data)
+            self.lock.release()
