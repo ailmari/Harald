@@ -57,7 +57,6 @@ class Host():
 
     def receive(self, sock):
         while True:
-            print('received data')
             data = sock.recv(1024)
             if data:
                 self.recv_queue.put(data)
