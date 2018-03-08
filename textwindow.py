@@ -75,14 +75,13 @@ class TextWindow(tk.Text):
 
     def recv(self):
         try:
-            while True:
-                message = self.parent.recv_queue.get_nowait()
-                _from = message.get('_from')
-                _to = message.get('_to')
-                message_text = message.get('message')
-                if message.get('_type') == 'insert':
-                    self.log('recv', message_text, _from=_from, _to=_to)
-                    self.insert(_from, message_text)
+            message = self.parent.recv_queue.get_nowait()
+            _from = message.get('_from')
+            _to = message.get('_to')
+            message_text = message.get('message')
+            if message.get('_type') == 'insert':
+                self.log('recv', message_text, _from=_from, _to=_to)
+                self.insert(_from, message_text)
         except queue.Empty:
             pass
 
